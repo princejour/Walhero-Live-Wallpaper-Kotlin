@@ -161,9 +161,9 @@ class MainActivity : Activity() {
         }
         val serviceClass = when (target) {
             TARGET_HOME -> HomeWallpaperService::class.java
-            TARGET_SCREEN -> ScreenLockWallpaperService::class.java
-            TARGET_BOTH -> BothWallpaperService::class.java
-            else -> BothWallpaperService::class.java
+            TARGET_SCREEN -> VideoWallpaperService::class.java
+            TARGET_BOTH -> VideoWallpaperService::class.java
+            else -> VideoWallpaperService::class.java
         }
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, ComponentName(this, serviceClass))
