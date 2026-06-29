@@ -12,9 +12,9 @@ class VideoWallpaperService : WallpaperService() {
 
     private inner class VideoEngine : Engine(), SharedPreferences.OnSharedPreferenceChangeListener {
         private var player: MediaPlayer? = null
-        private var surfaceHolder: SurfaceHolder? = null
-        private var isVisibleNow = false
-        private var isPrepared = false
+        private var holderRef: SurfaceHolder? = null
+        private var visibleNow = false
+        private var prepared = false
         private val prefs: SharedPreferences = getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)
 
         init {
@@ -23,36 +23,31 @@ class VideoWallpaperService : WallpaperService() {
 
         override fun onSurfaceCreated(holder: SurfaceHolder) {
             super.onSurfaceCreated(holder)
-            surfaceHolder = holder
+            holderRef = holder
             reload()
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)
-            isVisibleNow = visible
+            visibleNow = visible
             val mediaPlayer = player
             if (mediaPlayer == null) {
                 if (visible) reload()
                 return
             }
+
             try {
                 applyAudioState()
-                if (visible && isPrepared && !mediaPlayer.isPlaying) mediaPlayer.start()
+                if (visible && prepared && !mediaPlayer.isPlaying) mediaPlayer.start()
                 if (!visible && mediaPlayer.isPlaying) mediaPlayer.pause()
             } catch (_: Exception) {
                 releasePlayer()
             }
         }
 
-        override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
-            if (key == MainActivity.KEY_VIDEO_URI || key == MainActivity.KEY_AUDIO_ENABLED) {
-                reload()
-            }
-        }
-
         override fun onSurfaceDestroyed(holder: SurfaceHolder) {
             super.onSurfaceDestroyed(holder)
-            surfaceHolder = null
+            holderRef = null
             releasePlayer()
         }
 
@@ -62,8 +57,14 @@ class VideoWallpaperService : WallpaperService() {
             super.onDestroy()
         }
 
+        override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
+            if (key == MainActivity.KEY_VIDEO_URI || key == MainActivity.KEY_AUDIO_ENABLED) {
+                reload()
+            }
+        }
+
         private fun reload() {
-            val holder = surfaceHolder ?: return
+            val holder = holderRef ?: return
             val videoUri = MainActivity.getVideoUri(applicationContext)
             if (videoUri == null) {
                 releasePlayer()
@@ -75,22 +76,22 @@ class VideoWallpaperService : WallpaperService() {
         private fun startVideo(holder: SurfaceHolder, uriText: String) {
             releasePlayer()
             try {
-                val newPlayer = MediaPlayer()
-                newPlayer.setDataSource(applicationContext, Uri.parse(uriText))
-                newPlayer.setSurface(holder.surface)
-                newPlayer.isLooping = true
-                newPlayer.setOnPreparedListener { mp ->
-                    isPrepared = true
+                val mediaPlayer = MediaPlayer()
+                mediaPlayer.setDataSource(applicationContext, Uri.parse(uriText))
+                mediaPlayer.setSurface(holder.surface)
+                mediaPlayer.isLooping = true
+                mediaPlayer.setOnPreparedListener { preparedPlayer ->
+                    prepared = true
                     applyAudioState()
-                    if (isVisibleNow) mp.start()
+                    if (visibleNow) preparedPlayer.start()
                 }
-                newPlayer.setOnErrorListener { _, _, _ ->
+                mediaPlayer.setOnErrorListener { _, _, _ ->
                     releasePlayer()
                     true
                 }
-                player = newPlayer
+                player = mediaPlayer
                 applyAudioState()
-                newPlayer.prepareAsync()
+                mediaPlayer.prepareAsync()
             } catch (_: Exception) {
                 releasePlayer()
             }
@@ -106,16 +107,16 @@ class VideoWallpaperService : WallpaperService() {
         }
 
         private fun releasePlayer() {
-            isPrepared = false
-            val oldPlayer = player
+            prepared = false
+            val mediaPlayer = player
             player = null
-            if (oldPlayer != null) {
+            if (mediaPlayer != null) {
                 try {
-                    oldPlayer.stop()
+                    mediaPlayer.stop()
                 } catch (_: Exception) {
                 }
                 try {
-                    oldPlayer.release()
+                    mediaPlayer.release()
                 } catch (_: Exception) {
                 }
             }
