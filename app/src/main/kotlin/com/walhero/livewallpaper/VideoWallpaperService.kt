@@ -1,3 +1,3 @@
 package com.walhero.livewallpaper
 
-class VideoWallpaperService : BaseVideoWallpaperService()
+open class VideoWallpaperService : BaseVideoWallpaperService()
