@@ -98,18 +98,30 @@ class MainActivity : Activity() {
     }
 
     private fun applyHomeWallpaper() {
-        openWallpaper(TargetRequest.HOME)
+        if (getVideoUri(this) == null) {
+            Toast.makeText(this, "Choose a video first", Toast.LENGTH_LONG).show()
+            return
+        }
+        TargetRequest.write(this, TargetRequest.HOME)
+        try {
+            WallpaperManager.getInstance(this).setWallpaperComponent(
+                ComponentName(this, VideoWallpaperService::class.java)
+            )
+            Toast.makeText(this, "Applied to home screen", Toast.LENGTH_SHORT).show()
+        } catch (_: Exception) {
+            openWallpaperChooser(TargetRequest.HOME)
+        }
     }
 
     private fun applyLockWallpaper() {
-        openWallpaper(TargetRequest.LOCK)
+        openWallpaperChooser(TargetRequest.LOCK)
     }
 
     private fun applyBothWallpapers() {
-        openWallpaper(TargetRequest.BOTH)
+        openWallpaperChooser(TargetRequest.BOTH)
     }
 
-    private fun openWallpaper(target: String) {
+    private fun openWallpaperChooser(target: String) {
         if (getVideoUri(this) == null) {
             Toast.makeText(this, "Choose a video first", Toast.LENGTH_LONG).show()
             return
