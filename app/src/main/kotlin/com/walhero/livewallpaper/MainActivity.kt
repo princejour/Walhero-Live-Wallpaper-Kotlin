@@ -92,9 +92,17 @@ class MainActivity : Activity() {
         chooseButton.setOnClickListener { chooseVideo() }
         root.addView(chooseButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
 
-        val applyButton = button(getString(R.string.apply_wallpaper), true)
-        applyButton.setOnClickListener { applyLiveWallpaper() }
-        root.addView(applyButton, full(dp(0), dp(0), dp(0), dp(12), dp(58)))
+        val applyHomeButton = button("Apply to home screen", true)
+        applyHomeButton.setOnClickListener { applyHomeWallpaper() }
+        root.addView(applyHomeButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+
+        val applyLockButton = button("Apply to lock screen", true)
+        applyLockButton.setOnClickListener { applyLockWallpaper() }
+        root.addView(applyLockButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+
+        val applyBothButton = button("Apply to both screens", true)
+        applyBothButton.setOnClickListener { applyBothWallpapers() }
+        root.addView(applyBothButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
 
         soundButton = button(getString(R.string.enable_sound), false)
         soundButton.setOnClickListener { toggleAudio() }
@@ -145,11 +153,24 @@ class MainActivity : Activity() {
         refreshStatus()
     }
 
-    private fun applyLiveWallpaper() {
+    private fun applyHomeWallpaper() {
+        openWallpaperChooser(TargetRequest.HOME)
+    }
+
+    private fun applyLockWallpaper() {
+        openWallpaperChooser(TargetRequest.LOCK)
+    }
+
+    private fun applyBothWallpapers() {
+        openWallpaperChooser(TargetRequest.BOTH)
+    }
+
+    private fun openWallpaperChooser(target: String) {
         if (getVideoUri(this) == null) {
             Toast.makeText(this, "Choose a video first", Toast.LENGTH_LONG).show()
             return
         }
+        TargetRequest.write(this, target)
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
         intent.putExtra(
             WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
@@ -181,6 +202,7 @@ class MainActivity : Activity() {
             .remove(KEY_VIDEO_URI)
             .remove(KEY_AUDIO_ENABLED)
             .apply()
+        TargetRequest.clear(this)
         Toast.makeText(this, "Video cleared", Toast.LENGTH_SHORT).show()
         refreshStatus()
     }
