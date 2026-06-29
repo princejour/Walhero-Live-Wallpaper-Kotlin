@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'WalheroLiveWallpaperKotlin'
+rootProject.name = 'WalheroLiveWallpaper'
 include ':app'
