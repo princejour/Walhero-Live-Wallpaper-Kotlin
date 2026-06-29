@@ -90,8 +90,12 @@ class VideoWallpaperService : WallpaperService() {
             val lockEngine = flags and WallpaperManager.FLAG_LOCK != 0
 
             return when (target) {
-                TargetRequest.HOME -> if (lockEngine && !homeEngine) null else video
-                TargetRequest.LOCK -> if (homeEngine && !lockEngine) null else video
+                TargetRequest.HOME -> {
+                    if (flags == 0 || (homeEngine && !lockEngine)) video else null
+                }
+                TargetRequest.LOCK -> {
+                    if (flags == 0 || (lockEngine && !homeEngine)) video else null
+                }
                 TargetRequest.BOTH -> video
                 else -> video
             }
