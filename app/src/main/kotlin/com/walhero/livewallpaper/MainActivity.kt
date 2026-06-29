@@ -12,7 +12,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -20,111 +19,105 @@ import android.widget.Toast
 
 class MainActivity : Activity() {
     companion object {
-        const val PREFS = "walhero_kotlin_prefs"
+        const val PREFS = "walhero_premium_wallpaper_prefs"
         const val KEY_VIDEO_URI = "video_uri"
         const val KEY_AUDIO_ENABLED = "audio_enabled"
+        const val KEY_TARGET = "target"
+        const val TARGET_HOME = "HOME"
+        const val TARGET_SCREEN = "SCREEN"
+        const val TARGET_BOTH = "BOTH"
         private const val REQUEST_VIDEO = 4001
 
         fun getVideoUri(context: Context): String? {
-            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getString(KEY_VIDEO_URI, null)
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_VIDEO_URI, null)
         }
 
         fun isAudioEnabled(context: Context): Boolean {
-            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getBoolean(KEY_AUDIO_ENABLED, false)
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_AUDIO_ENABLED, false)
         }
     }
 
     private lateinit var statusText: TextView
-    private lateinit var audioStatusText: TextView
-    private lateinit var chooseButton: Button
-    private lateinit var soundButton: Button
-    private lateinit var clearButton: Button
-
-    private val bgTop = Color.rgb(8, 19, 37)
-    private val bgBottom = Color.rgb(12, 31, 62)
-    private val cardBg = Color.rgb(20, 40, 74)
-    private val cardBorder = Color.rgb(33, 78, 134)
-    private val accent = Color.rgb(30, 144, 255)
-    private val accent2 = Color.rgb(77, 184, 255)
-    private val textPrimary = Color.rgb(244, 249, 255)
-    private val textSecondary = Color.rgb(175, 201, 232)
-    private val danger = Color.rgb(204, 58, 82)
+    private lateinit var soundText: TextView
+    private lateinit var targetText: TextView
+    private lateinit var homeTarget: TextView
+    private lateinit var screenTarget: TextView
+    private lateinit var bothTarget: TextView
+    private var selectedTarget: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = getString(R.string.app_name)
-        window.statusBarColor = bgTop
-        window.navigationBarColor = bgTop
-        setContentView(buildPremiumUi())
-        refreshStatus()
-    }
+        window.statusBarColor = Color.parseColor("#05060A")
+        window.navigationBarColor = Color.parseColor("#05060A")
+        selectedTarget = getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_TARGET, null)
 
-    private fun buildPremiumUi(): ScrollView {
         val scroll = ScrollView(this)
-        scroll.setBackground(gradient(bgTop, bgBottom, 0f))
-
+        scroll.setBackgroundColor(Color.parseColor("#05060A"))
         val root = LinearLayout(this)
         root.orientation = LinearLayout.VERTICAL
         root.gravity = Gravity.CENTER_HORIZONTAL
-        root.setPadding(dp(18), dp(20), dp(18), dp(18))
+        root.setPadding(dp(22), dp(34), dp(22), dp(22))
         scroll.addView(root, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
-        val header = verticalCard()
-        header.gravity = Gravity.CENTER
-        header.setPadding(dp(18), dp(18), dp(18), dp(18))
-        header.addView(text("◉", 42f, accent2, true, Gravity.CENTER))
-        header.addView(text(getString(R.string.title_main), 24f, textPrimary, true, Gravity.CENTER))
-        header.addView(text(getString(R.string.subtitle_main), 13f, textSecondary, false, Gravity.CENTER))
-        root.addView(header, full(dp(0), dp(0), dp(0), dp(14)))
+        val logo = TextView(this)
+        logo.text = "WALHERO"
+        logo.textSize = 30f
+        logo.typeface = Typeface.DEFAULT_BOLD
+        logo.setTextColor(Color.WHITE)
+        logo.gravity = Gravity.CENTER
+        root.addView(logo, fullWidth())
 
-        val statusCard = verticalCard()
-        statusCard.setPadding(dp(18), dp(18), dp(18), dp(18))
-        statusCard.addView(text(getString(R.string.status_title), 16f, textPrimary, true, Gravity.START))
-        statusText = text("", 18f, textPrimary, true, Gravity.START)
-        audioStatusText = text("", 13f, textSecondary, false, Gravity.START)
-        statusCard.addView(statusText, full(dp(0), dp(8), dp(0), dp(0)))
-        statusCard.addView(audioStatusText, full(dp(0), dp(4), dp(0), dp(0)))
-        root.addView(statusCard, full(dp(0), dp(0), dp(0), dp(14)))
+        val subtitle = TextView(this)
+        subtitle.text = "Premium Video Live Wallpaper"
+        subtitle.textSize = 15f
+        subtitle.setTextColor(Color.parseColor("#C7C7D1"))
+        subtitle.gravity = Gravity.CENTER
+        root.addView(subtitle, fullWidth())
 
-        chooseButton = button(getString(R.string.choose_video), true)
-        chooseButton.setOnClickListener { chooseVideo() }
-        root.addView(chooseButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.setPadding(dp(18), dp(18), dp(18), dp(18))
+        card.background = rounded("#11131C", "#2B3040", 22)
+        root.addView(card, cardParams())
 
-        val applyHomeButton = button("Apply to home screen", true)
-        applyHomeButton.setOnClickListener { applyHomeWallpaper() }
-        root.addView(applyHomeButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+        statusText = infoLine()
+        soundText = infoLine()
+        targetText = infoLine()
+        card.addView(statusText, fullWidth())
+        card.addView(soundText, fullWidth())
+        card.addView(targetText, fullWidth())
 
-        val applyLockButton = button("Apply to lock screen", true)
-        applyLockButton.setOnClickListener { applyLockWallpaper() }
-        root.addView(applyLockButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+        root.addView(actionButton("Choose video") { chooseVideo() }, fullWidth())
+        root.addView(actionButton("Sound on / off") { toggleAudio() }, fullWidth())
 
-        val applyBothButton = button("Apply to both screens", true)
-        applyBothButton.setOnClickListener { applyBothWallpapers() }
-        root.addView(applyBothButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+        val targetTitle = TextView(this)
+        targetTitle.text = "Choose target before applying"
+        targetTitle.textSize = 16f
+        targetTitle.typeface = Typeface.DEFAULT_BOLD
+        targetTitle.setTextColor(Color.WHITE)
+        targetTitle.gravity = Gravity.CENTER
+        root.addView(targetTitle, fullWidth())
 
-        soundButton = button(getString(R.string.enable_sound), false)
-        soundButton.setOnClickListener { toggleAudio() }
-        root.addView(soundButton, full(dp(0), dp(0), dp(0), dp(12), dp(54)))
+        homeTarget = targetButton("Home screen", TARGET_HOME)
+        screenTarget = targetButton("Screen lock", TARGET_SCREEN)
+        bothTarget = targetButton("Both screens", TARGET_BOTH)
+        root.addView(homeTarget, fullWidth())
+        root.addView(screenTarget, fullWidth())
+        root.addView(bothTarget, fullWidth())
 
-        clearButton = button(getString(R.string.clear_video), false)
-        clearButton.background = solid(danger, dp(14).toFloat(), danger)
-        clearButton.setOnClickListener { clearVideo() }
-        root.addView(clearButton, full(dp(0), dp(0), dp(0), dp(14), dp(54)))
+        root.addView(applyButton("Apply selected live wallpaper") { openWallpaperChooser() }, fullWidth())
+        root.addView(secondaryButton("Clear video and target") { clearAll() }, fullWidth())
 
-        val noteCard = verticalCard()
-        noteCard.setPadding(dp(16), dp(16), dp(16), dp(16))
-        noteCard.addView(text(getString(R.string.note_title), 15f, textPrimary, true, Gravity.START))
-        noteCard.addView(text(getString(R.string.system_note), 13f, textSecondary, false, Gravity.START), full(dp(0), dp(8), dp(0), dp(0)))
-        root.addView(noteCard, full(dp(0), dp(0), dp(0), dp(18)))
+        val copyright = TextView(this)
+        copyright.text = "© 2026 Walhero. All rights reserved."
+        copyright.textSize = 12f
+        copyright.setTextColor(Color.parseColor("#8C91A3"))
+        copyright.gravity = Gravity.CENTER
+        root.addView(copyright, fullWidth())
 
-        val footer = text("© WBJ", 16f, accent2, true, Gravity.CENTER)
-        footer.typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-        footer.setShadowLayer(10f, 0f, 0f, accent)
-        root.addView(footer, full(dp(0), dp(2), dp(0), dp(10)))
-
-        return scroll
+        setContentView(scroll)
+        refreshStatus()
     }
 
     private fun chooseVideo() {
@@ -136,137 +129,151 @@ class MainActivity : Activity() {
         startActivityForResult(intent, REQUEST_VIDEO)
     }
 
-    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != REQUEST_VIDEO || resultCode != RESULT_OK) return
         val uri: Uri = data?.data ?: return
         try {
-            contentResolver.takePersistableUriPermission(uri, data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val flags = data.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION
+            contentResolver.takePersistableUriPermission(uri, flags)
         } catch (_: Exception) {
         }
-        getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY_VIDEO_URI, uri.toString())
-            .apply()
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_VIDEO_URI, uri.toString()).apply()
+        refreshStatus()
         Toast.makeText(this, "Video selected", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun selectTarget(target: String) {
+        selectedTarget = target
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_TARGET, target).apply()
         refreshStatus()
     }
 
-    private fun applyHomeWallpaper() {
-        openWallpaperChooser(TargetRequest.HOME)
-    }
-
-    private fun applyLockWallpaper() {
-        openWallpaperChooser(TargetRequest.LOCK)
-    }
-
-    private fun applyBothWallpapers() {
-        openWallpaperChooser(TargetRequest.BOTH)
-    }
-
-    private fun openWallpaperChooser(target: String) {
+    private fun openWallpaperChooser() {
         if (getVideoUri(this) == null) {
             Toast.makeText(this, "Choose a video first", Toast.LENGTH_LONG).show()
             return
         }
-        TargetRequest.write(this, target)
+        val target = selectedTarget
+        if (target == null) {
+            Toast.makeText(this, "Choose target first", Toast.LENGTH_LONG).show()
+            return
+        }
+        val serviceClass = when (target) {
+            TARGET_HOME -> HomeWallpaperService::class.java
+            TARGET_SCREEN -> ScreenLockWallpaperService::class.java
+            TARGET_BOTH -> BothWallpaperService::class.java
+            else -> BothWallpaperService::class.java
+        }
         val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
-        intent.putExtra(
-            WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT,
-            ComponentName(this, VideoWallpaperService::class.java)
-        )
+        intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, ComponentName(this, serviceClass))
         try {
             startActivity(intent)
         } catch (_: Exception) {
-            try {
-                startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
-            } catch (_: Exception) {
-                Toast.makeText(this, "Open system wallpaper settings and choose Walhero Live Wallpaper", Toast.LENGTH_LONG).show()
-            }
+            startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
         }
     }
 
     private fun toggleAudio() {
         val next = !isAudioEnabled(this)
-        getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean(KEY_AUDIO_ENABLED, next)
-            .apply()
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_AUDIO_ENABLED, next).apply()
         refreshStatus()
     }
 
-    private fun clearVideo() {
-        getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit()
-            .remove(KEY_VIDEO_URI)
-            .remove(KEY_AUDIO_ENABLED)
-            .apply()
-        TargetRequest.clear(this)
-        Toast.makeText(this, "Video cleared", Toast.LENGTH_SHORT).show()
+    private fun clearAll() {
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+        selectedTarget = null
         refreshStatus()
+        Toast.makeText(this, "Cleared", Toast.LENGTH_SHORT).show()
     }
 
     private fun refreshStatus() {
-        val hasVideo = getVideoUri(this) != null
-        val soundEnabled = isAudioEnabled(this)
-        statusText.text = if (hasVideo) getString(R.string.video_ready) else getString(R.string.no_video)
-        audioStatusText.text = if (soundEnabled) getString(R.string.sound_enabled) else getString(R.string.sound_disabled)
-        chooseButton.text = if (hasVideo) getString(R.string.change_video) else getString(R.string.choose_video)
-        soundButton.text = if (soundEnabled) getString(R.string.disable_sound) else getString(R.string.enable_sound)
-        clearButton.isEnabled = hasVideo
-        clearButton.alpha = if (hasVideo) 1f else 0.45f
+        statusText.text = if (getVideoUri(this) == null) "Video: not selected" else "Video: ready"
+        soundText.text = if (isAudioEnabled(this)) "Sound: enabled" else "Sound: disabled"
+        targetText.text = "Target: ${selectedTarget ?: "not selected"}"
+        setTargetStyle(homeTarget, selectedTarget == TARGET_HOME)
+        setTargetStyle(screenTarget, selectedTarget == TARGET_SCREEN)
+        setTargetStyle(bothTarget, selectedTarget == TARGET_BOTH)
     }
 
-    private fun verticalCard(): LinearLayout {
-        val view = LinearLayout(this)
-        view.orientation = LinearLayout.VERTICAL
-        view.background = solid(cardBg, dp(18).toFloat(), cardBorder)
+    private fun infoLine(): TextView {
+        val text = TextView(this)
+        text.textSize = 15f
+        text.setTextColor(Color.parseColor("#E6E8F2"))
+        text.gravity = Gravity.CENTER
+        return text
+    }
+
+    private fun targetButton(label: String, target: String): TextView {
+        val view = TextView(this)
+        view.text = label
+        view.textSize = 16f
+        view.gravity = Gravity.CENTER
+        view.setPadding(dp(16), dp(14), dp(16), dp(14))
+        view.setOnClickListener { selectTarget(target) }
         return view
     }
 
-    private fun button(label: String, primary: Boolean): Button {
-        val b = Button(this)
-        b.text = label
-        b.textSize = 16f
-        b.setTextColor(textPrimary)
-        b.setAllCaps(false)
-        b.typeface = Typeface.DEFAULT_BOLD
-        b.background = if (primary) gradient(accent, accent2, dp(14).toFloat()) else solid(Color.rgb(13, 27, 46), dp(14).toFloat(), cardBorder)
-        return b
+    private fun setTargetStyle(view: TextView, selected: Boolean) {
+        view.setTextColor(if (selected) Color.BLACK else Color.WHITE)
+        view.typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+        view.background = if (selected) rounded("#D6B25E", "#FFE49A", 18) else rounded("#171A25", "#353A4E", 18)
     }
 
-    private fun text(value: String, size: Float, color: Int, bold: Boolean, gravity: Int): TextView {
-        val t = TextView(this)
-        t.text = value
-        t.textSize = size
-        t.setTextColor(color)
-        t.gravity = gravity
-        if (bold) t.typeface = Typeface.DEFAULT_BOLD
-        return t
+    private fun actionButton(text: String, action: () -> Unit): TextView {
+        val view = baseButton(text)
+        view.background = rounded("#191D2A", "#3D4357", 18)
+        view.setOnClickListener { action() }
+        return view
     }
 
-    private fun gradient(start: Int, end: Int, radius: Float): GradientDrawable {
-        val g = GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(start, end))
-        g.cornerRadius = radius
-        return g
+    private fun applyButton(text: String, action: () -> Unit): TextView {
+        val view = baseButton(text)
+        view.setTextColor(Color.BLACK)
+        view.typeface = Typeface.DEFAULT_BOLD
+        view.background = rounded("#D6B25E", "#FFE49A", 18)
+        view.setOnClickListener { action() }
+        return view
     }
 
-    private fun solid(color: Int, radius: Float, stroke: Int): GradientDrawable {
-        val g = GradientDrawable()
-        g.setColor(color)
-        g.cornerRadius = radius
-        g.setStroke(dp(1), stroke)
-        return g
+    private fun secondaryButton(text: String, action: () -> Unit): TextView {
+        val view = baseButton(text)
+        view.setTextColor(Color.parseColor("#E6E8F2"))
+        view.background = rounded("#0E1018", "#2B3040", 18)
+        view.setOnClickListener { action() }
+        return view
     }
 
-    private fun full(left: Int, top: Int, right: Int, bottom: Int, height: Int = ViewGroup.LayoutParams.WRAP_CONTENT): LinearLayout.LayoutParams {
-        val p = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, height)
-        p.setMargins(left, top, right, bottom)
-        return p
+    private fun baseButton(text: String): TextView {
+        val view = TextView(this)
+        view.text = text
+        view.textSize = 16f
+        view.setTextColor(Color.WHITE)
+        view.gravity = Gravity.CENTER
+        view.setPadding(dp(16), dp(15), dp(16), dp(15))
+        return view
     }
 
-    private fun dp(value: Int): Int {
-        return (value * resources.displayMetrics.density).toInt()
+    private fun rounded(fill: String, stroke: String, radiusDp: Int): GradientDrawable {
+        val drawable = GradientDrawable()
+        drawable.shape = GradientDrawable.RECTANGLE
+        drawable.cornerRadius = dp(radiusDp).toFloat()
+        drawable.setColor(Color.parseColor(fill))
+        drawable.setStroke(dp(1), Color.parseColor(stroke))
+        return drawable
     }
+
+    private fun fullWidth(): LinearLayout.LayoutParams {
+        val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        params.setMargins(0, dp(8), 0, dp(8))
+        return params
+    }
+
+    private fun cardParams(): LinearLayout.LayoutParams {
+        val params = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        params.setMargins(0, dp(18), 0, dp(18))
+        return params
+    }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
