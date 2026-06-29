@@ -1,11 +1,9 @@
 package com.walhero.livewallpaper
 
-import android.app.WallpaperManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Build
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
 
@@ -17,7 +15,6 @@ class VideoWallpaperService : WallpaperService() {
         private var surfaceHolder: SurfaceHolder? = null
         private var isVisibleNow = false
         private var isPrepared = false
-        private var currentFlags = 0
         private val prefs: SharedPreferences = getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE)
 
         init {
@@ -27,13 +24,6 @@ class VideoWallpaperService : WallpaperService() {
         override fun onSurfaceCreated(holder: SurfaceHolder) {
             super.onSurfaceCreated(holder)
             surfaceHolder = holder
-            currentFlags = readWallpaperFlags()
-            reload()
-        }
-
-        override fun onWallpaperFlagsChanged(which: Int) {
-            super.onWallpaperFlagsChanged(which)
-            currentFlags = which
             reload()
         }
 
@@ -55,7 +45,7 @@ class VideoWallpaperService : WallpaperService() {
         }
 
         override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
-            if (key == MainActivity.KEY_VIDEO_URI || key == MainActivity.KEY_AUDIO_ENABLED || key == TargetRequest.KEY_TARGET) {
+            if (key == MainActivity.KEY_VIDEO_URI || key == MainActivity.KEY_AUDIO_ENABLED) {
                 reload()
             }
         }
@@ -74,41 +64,12 @@ class VideoWallpaperService : WallpaperService() {
 
         private fun reload() {
             val holder = surfaceHolder ?: return
-            val videoUri = resolveVideoForThisEngine()
+            val videoUri = MainActivity.getVideoUri(applicationContext)
             if (videoUri == null) {
                 releasePlayer()
                 return
             }
             startVideo(holder, videoUri)
-        }
-
-        private fun resolveVideoForThisEngine(): String? {
-            val video = MainActivity.getVideoUri(applicationContext) ?: return null
-            val target = TargetRequest.read(applicationContext)
-            val flags = readWallpaperFlags()
-            val homeEngine = flags and WallpaperManager.FLAG_SYSTEM != 0
-            val lockEngine = flags and WallpaperManager.FLAG_LOCK != 0
-
-            return when (target) {
-                TargetRequest.HOME -> {
-                    if (flags == 0 || (homeEngine && !lockEngine)) video else null
-                }
-                TargetRequest.LOCK -> {
-                    if (flags == 0 || (lockEngine && !homeEngine)) video else null
-                }
-                TargetRequest.BOTH -> video
-                else -> video
-            }
-        }
-
-        private fun readWallpaperFlags(): Int {
-            if (Build.VERSION.SDK_INT >= 34) {
-                try {
-                    return getWallpaperFlags()
-                } catch (_: Exception) {
-                }
-            }
-            return currentFlags
         }
 
         private fun startVideo(holder: SurfaceHolder, uriText: String) {
