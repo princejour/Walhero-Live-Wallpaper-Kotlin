@@ -16,14 +16,14 @@ open class BaseVideoWallpaperService : WallpaperService() {
         override fun onDestroy() { stop(); super.onDestroy() }
         private fun start() {
             val holder = holderRef ?: return
-            val uriText = MainActivity.getVideoUri(applicationContext) ?: return
+            val uriText = MainActivity.videoUri(applicationContext) ?: return
             stop()
             try {
                 player = MediaPlayer().apply {
                     setDataSource(applicationContext, Uri.parse(uriText))
                     setSurface(holder.surface)
                     isLooping = true
-                    val volume = if (MainActivity.isAudioEnabled(applicationContext)) 1f else 0f
+                    val volume = if (MainActivity.audioEnabled(applicationContext)) 1f else 0f
                     setVolume(volume, volume)
                     setOnPreparedListener { if (visibleNow) it.start() }
                     setOnErrorListener { _, _, _ -> stop(); true }
