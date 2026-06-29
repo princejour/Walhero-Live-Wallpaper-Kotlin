@@ -2,7 +2,7 @@
 <resources>
     <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowNoTitle">true</item>
-        <item name="android:windowBackground">@drawable/bg_app</item>
+        <item name="android:windowBackground">#081325</item>
         <item name="android:statusBarColor">#081325</item>
         <item name="android:navigationBarColor">#081325</item>
         <item name="android:fontFamily">sans</item>
